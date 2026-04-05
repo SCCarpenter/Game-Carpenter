@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terminal - Protocolo de Emergencia</title>
+    <style>
+        body {
+            background-color: #050505;
+            color: #00ff41;
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        #game-container {
+            max-width: 800px;
+            width: 100%;
+            background: #0a0a0a;
+            padding: 30px;
+            border: 1px solid #00ff41;
+            box-shadow: 0 0 20px rgba(0, 255, 65, 0.2);
+            border-radius: 4px;
+        }
+        h1 { 
+            border-bottom: 1px solid #00ff41; 
+            padding-bottom: 10px; 
+            font-size: 1.5em;
+        }
+        #text-display { 
+            font-size: 1.1em; 
+            line-height: 1.6; 
+            margin-bottom: 30px; 
+            min-height: 120px;
+        }
+        #options { 
+            display: flex; 
+            flex-direction: column; 
+            gap: 12px; 
+        }
+        button {
+            background-color: transparent;
+            color: #00ff41;
+            border: 1px solid #00ff41;
+            padding: 15px;
+            font-size: 1em;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            text-align: left;
+        }
+        button:hover {
+            background-color: #00ff41;
+            color: #050505;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <h1>> ACCESO AL SISTEMA</h1>
+        <div id="text-display">Cargando interfaz...</div>
+        <div id="options"></div>
+    </div>
+
+    <script>
+        // Aquí se estructura la historia. Cada bloque es una "escena".
+        const story = {
+            inicio: {
+                text: "Año 2026. Te encuentras en tu habitación en Neza. Tu MacBook Neo está procesando un modelo de IA complejo en segundo plano, pero de repente saltan las alarmas de tu firewall. Alguien intenta hacer una inyección de código para robar tu algoritmo. ¿Qué haces?",
+                choices: [
+                    { text: "> Ejecutar un script de contraataque en Python.", next: "defensa" },
+                    { text: "> Desconectar físicamente el router de la pared.", next: "cable" }
+                ]
+            },
+            defensa: {
+                text: "Abres la terminal y escribes a toda velocidad. Logras aislar la IP del atacante, que resulta ser un servidor remoto ejecutando un 'brute force'. El ataque se detiene, pero tienes acceso temporal a su red.",
+                choices: [
+                    { text: "> Rastrear la IP para descubrir quién es el atacante.", next: "rastrear" },
+                    { text: "> Encriptar tu IA con encriptación AES-256 y apagar el sistema.", next: "apagar" }
+                ]
+            },
+            cable: {
+                text: "¡A lo seguro! El método analógico nunca falla. La descarga se detiene en seco. Sin embargo, al revisar los registros locales, te das cuenta de que el atacante dejó un malware residual escondido en la caché.",
+                choices: [
+                    { text: "> Aislar y analizar el malware en un entorno seguro (Sandbox).", next: "sandbox" },
+                    { text: "> Formatear el disco de inmediato y perder el 30% del progreso de la IA.", next: "formatear" }
+                ]
+            },
+            rastrear: {
+                text: "Usando una red proxy inversa, descubres que la señal proviene de un servidor botnet abandonado. Logras extraer sus bases de datos antes de que te expulsen. Has salvado tu proyecto y obtuviste información valiosa. FIN DEL JUEGO.",
+                choices: [
+                    { text: "> Reiniciar simulación", next: "inicio" }
+                ]
+            },
+            apagar: {
+                text: "Tu sistema está asegurado, pero nunca sabrás quién intentó robar tu código. A veces, en ciberseguridad, sobrevivir es ganar. FIN DEL JUEGO.",
+                choices: [
+                    { text: "> Reiniciar simulación", next: "inicio" }
+                ]
+            },
+            sandbox: {
+                text: "Resulta ser un troyano bastante avanzado. Al desarmarlo pieza por pieza, entiendes su lógica y aprendes una vulnerabilidad nueva del sistema. Conocimiento adquirido. FIN DEL JUEGO.",
+                choices: [
+                    { text: "> Reiniciar simulación", next: "inicio" }
+                ]
+            },
+            formatear: {
+                text: "Perdiste semanas de trabajo, pero la paranoia pudo más. Tu red está limpia. Al menos ahora tienes una excusa perfecta para reescribir el código usando algoritmos más limpios. FIN DEL JUEGO.",
+                choices: [
+                    { text: "> Reiniciar simulación", next: "inicio" }
+                ]
+            }
+        };
+
+        // Función que muestra la escena actual
+        function showNode(nodeId) {
+            const node = story[nodeId];
+            const textDisplay = document.getElementById('text-display');
+            const optionsContainer = document.getElementById('options');
+
+            // Actualiza el texto
+            textDisplay.innerHTML = node.text;
+            
+            // Limpia los botones anteriores
+            optionsContainer.innerHTML = '';
+
+            // Crea los botones nuevos según las opciones de la escena
+            node.choices.forEach(choice => {
+                const button = document.createElement('button');
+                button.innerText = choice.text;
+                button.onclick = () => showNode(choice.next);
+                optionsContainer.appendChild(button);
+            });
+        }
+
+        // Inicia el juego en la escena 'inicio'
+        showNode('inicio');
+    </script>
+</body>
+</html>

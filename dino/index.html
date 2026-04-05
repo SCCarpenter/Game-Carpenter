@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chrome Dino - Clon Exacto</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        
+        body { 
+            margin: 0; 
+            padding: 0; 
+            background-color: #f7f7f7; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            height: 100vh; 
+            overflow: hidden;
+            font-family: 'Press Start 2P', monospace; /* Fuente clásica de 8 bits */
+        }
+        canvas { 
+            background-color: #f7f7f7; 
+            border-bottom: 2px solid #535353; /* El suelo de la pista */
+        }
+        #ui {
+            position: absolute;
+            top: 50px;
+            right: 50px;
+            font-size: 14px;
+            color: #535353;
+            display: flex;
+            gap: 20px;
+        }
+        #gameOverText {
+            position: absolute;
+            top: 40%;
+            font-size: 20px;
+            color: #535353;
+            display: none;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="ui">
+        <div>HI <span id="highScore">00000</span></div>
+        <div id="score">00000</div>
+    </div>
+    
+    <div id="gameOverText">
+        G A M E &nbsp; O V E R<br><br>
+        <span style="font-size: 12px;">Presiona ESPACIO o CLICK para reiniciar</span>
+    </div>
+
+    <canvas id="gameCanvas" width="800" height="200"></canvas>
+
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+const scoreElement = document.getElementById("score");
+const highScoreElement = document.getElementById("highScore");
+const gameOverText = document.getElementById("gameOverText");
+
+// Variables del sistema
+let frames = 0;
+let score = 0;
+let highScore = localStorage.getItem('dinoHighScore') || 0;
+let gameSpeed = 6;
+let isGameOver = false;
+let gameStarted = false;
+
+highScoreElement.innerText = highScore.toString().padStart(5, '0');
+
+// Físicas del T-Rex
+const dino = {
+    x: 50,
+    y: 150,
+    width: 44,
+    height: 47,
+    dy: 0,
+    gravity: 0.8,
+    jumpPower: -12,
+    grounded: true,
+
+    draw() {
+        ctx.fillStyle = "#535353";
+        // Dibujando una forma aproximada al T-Rex en pixeles
+        ctx.fillRect(this.x, this.y, this.width, this.height);
+        // Ojo del T-Rex
+        ctx.fillStyle = "#f7f7f7";
+        ctx.fillRect(this.x + 30, this.y + 5, 5, 5);
+    },
+
+    update() {
+        if (this.y + this.height < 150 || this.dy < 0) {
+            this.dy += this.gravity;
+            this.y += this.dy;
+            this.grounded = false;
+        } else {
+            this.y = 150;
+            this.dy = 0;
+            this.grounded = true;
+        }
+        this.draw();
+    },
+
+    jump() {
+        if (this.grounded) {
+            this.dy = this.jumpPower;
+            this.grounded = false;
+        }
+    }
+};
+
+// Cactus (Obstáculos)
+const obstacles = [];
+
+class Cactus {
+    constructor() {
+        this.width = Math.random() > 0.5 ? 30 : 50; // Cactus simple o doble
+        this.height = Math.random() > 0.5 ? 40 : 55; // Diferentes alturas
+        this.x = canvas.width;
+        this.y = 150 + (47 - this.height); // Alinear al suelo
+    }
+    draw() {
+        ctx.fillStyle = "#535353";
+        ctx.fillRect(this.x, this.y, this.width, this.height);
+    }
+    update() {
+        this.x -= gameSpeed;
+        this.draw();
+    }
+}
+
+// Generador de Nubes (Para el fondo)
+const clouds = [];
+class Cloud {
+    constructor() {
+        this.x = canvas.width;
+        this.y = Math.random() * 80 + 20;
+        this.width = 46;
+        this.height = 14;
+        this.speed = gameSpeed * 0.2;
+    }
+    draw() {
+        ctx.fillStyle = "#e0e0e0";
+        ctx.fillRect(this.x, this.y, this.width, this.height);
+    }
+    update() {
+        this.x -= this.speed;
+        this.draw();
+    }
+}
+
+// Bucle principal del juego
+function animate() {
+    if (isGameOver) return;
+    requestAnimationFrame(animate);
+    
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Dificultad progresiva (el juego se hace más rápido)
+    if (frames % 1000 === 0 && gameSpeed < 15) {
+        gameSpeed += 0.5;
+    }
+
+    // Dibujar Nubes
+    if (frames % 150 === 0) {
+        clouds.push(new Cloud());
+    }
+    clouds.forEach((cloud, index) => {
+        cloud.update();
+        if (cloud.x + cloud.width < 0) clouds.splice(index, 1);
+    });
+
+    // Dibujar Dinosaurio
+    dino.update();
+
+    // Dibujar Cactus
+    if (frames % Math.floor(Math.random() * (120 - 60) + 60) === 0) {
+        obstacles.push(new Cactus());
+    }
+    
+    obstacles.forEach((obs, index) => {
+        obs.update();
+
+        // Detección de colisión perfecta
+        if (
+            dino.x < obs.x + obs.width &&
+            dino.x + dino.width > obs.x &&
+            dino.y < obs.y + obs.height &&
+            dino.y + dino.height > obs.y
+        ) {
+            isGameOver = true;
+            gameOverText.style.display = "block";
+            if (score > highScore) {
+                localStorage.setItem('dinoHighScore', Math.floor(score));
+            }
+        }
+
+        if (obs.x + obs.width < 0) obstacles.splice(index, 1);
+    });
+
+    // Puntuación
+    score += 0.05;
+    scoreElement.innerText = Math.floor(score).toString().padStart(5, '0');
+    frames++;
+}
+
+// Controles (Xbox, PC o Móvil)
+function handleInput() {
+    if (isGameOver) {
+        // Reiniciar variables
+        obstacles.length = 0;
+        clouds.length = 0;
+        frames = 0;
+        score = 0;
+        gameSpeed = 6;
+        isGameOver = false;
+        gameOverText.style.display = "none";
+        highScoreElement.innerText = localStorage.getItem('dinoHighScore').toString().padStart(5, '0');
+        animate();
+    } else {
+        dino.jump();
+        if (!gameStarted) {
+            gameStarted = true;
+            animate();
+        }
+    }
+}
+
+window.addEventListener("keydown", (e) => {
+    if (e.code === "Space" || e.code === "ArrowUp") handleInput();
+});
+window.addEventListener("mousedown", handleInput);
+window.addEventListener("touchstart", handleInput);
+
+// Dibujo inicial (antes de que el jugador presione start)
+dino.draw();
+
+</script>
+</body>
+</html>
